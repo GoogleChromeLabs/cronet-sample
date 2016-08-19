@@ -1,0 +1,48 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 23
+    buildToolsVersion "23.0.2"
+
+    defaultConfig {
+        applicationId "com.google.samples.cronet_sample"
+        minSdkVersion 16
+        targetSdkVersion 23
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+ext {
+    supportLibVersion = "23.1.1"
+    espressoVersion = "2.2.1"
+    androidTestVersion = "0.4"
+}
+
+dependencies {
+    compile fileTree(include: ['*.jar'], dir: 'libs')
+    testCompile 'junit:junit:4.12'
+    compile ("com.android.support:appcompat-v7:${supportLibVersion}")
+    compile files('libs/android-48.0.2564.95-Release-cronet-cronet.jar')
+    compile files('libs/android-48.0.2564.95-Release-cronet-cronet_api.jar')
+    compile 'com.squareup.okhttp3:okhttp:3.2.0'
+    compile('com.android.support:recyclerview-v7:23.3.0')
+    compile('com.android.support:percent:23.3.0')
+    compile 'com.google.android.exoplayer:exoplayer:r1.5.7'
+    androidTestCompile("com.android.support.test:runner:${androidTestVersion}") {
+        exclude group: "com.android.support"
+    }
+    androidTestCompile("com.android.support.test.espresso:espresso-core:${espressoVersion}") {
+        exclude module: "espresso-idling-resource"
+        exclude group: "com.android.support"
+    }
+
+
+
+}
