@@ -15,6 +15,7 @@
  */
 package com.google.samples.cronet_sample;
 
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -40,8 +41,6 @@ import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-
-import static org.chromium.base.ThreadUtils.runOnUiThread;
 
 public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
 
@@ -76,9 +75,10 @@ public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
     public void onBindViewHolder(final ViewHolder holder, int position) {
         // Create an executor to execute the request
         Executor executor = Executors.newSingleThreadExecutor();
-        UrlRequest.Callback callback = new SimpleUrlRequestCallback(holder.mImageViewCronet);
-        UrlRequest.Builder builder = new UrlRequest
-                .Builder(ImageRepository.getImage(position), callback, executor, cronetEngine);
+        UrlRequest.Callback callback = new SimpleUrlRequestCallback(holder.mImageViewCronet,
+                this.context);
+        UrlRequest.Builder builder = cronetEngine.newUrlRequestBuilder(
+                ImageRepository.getImage(position), callback, executor);
         // Measure the start time of the request so that
         // we can measure latency of the entire request cycle
         ((SimpleUrlRequestCallback) callback).start = System.nanoTime();
@@ -97,22 +97,24 @@ public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
         private ImageView imageView;
         public long start;
         private long stop;
+        private Activity mainActivity;
 
-        SimpleUrlRequestCallback(ImageView imageView) {
+        SimpleUrlRequestCallback(ImageView imageView, Context context) {
             this.imageView = imageView;
+            this.mainActivity = (Activity) context;
         }
 
         @Override
         public void onRedirectReceived(
                 UrlRequest request, UrlResponseInfo info, String newLocationUrl) {
-            org.chromium.base.Log.i(TAG, "****** onRedirectReceived ******");
+            android.util.Log.i(TAG, "****** onRedirectReceived ******");
             request.followRedirect();
         }
 
         @Override
         public void onResponseStarted(UrlRequest request, UrlResponseInfo info) {
-            org.chromium.base.Log.i(TAG, "****** Response Started ******");
-            org.chromium.base.Log.i(TAG, "*** Headers Are *** " + info.getAllHeaders());
+            android.util.Log.i(TAG, "****** Response Started ******");
+            android.util.Log.i(TAG, "*** Headers Are *** " + info.getAllHeaders());
 
             request.read(ByteBuffer.allocateDirect(32 * 1024));
         }
@@ -120,14 +122,14 @@ public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
         @Override
         public void onReadCompleted(
                 UrlRequest request, UrlResponseInfo info, ByteBuffer byteBuffer) {
-            org.chromium.base.Log.i(TAG, "****** onReadCompleted ******" + byteBuffer);
-
+            android.util.Log.i(TAG, "****** onReadCompleted ******" + byteBuffer);
+            byteBuffer.flip();
             try {
                 receiveChannel.write(byteBuffer);
             } catch (IOException e) {
-                org.chromium.base.Log.i(TAG, "IOException during ByteBuffer read. Details: ", e);
+                android.util.Log.i(TAG, "IOException during ByteBuffer read. Details: ", e);
             }
-            byteBuffer.position(0);
+            byteBuffer.clear();
             request.read(byteBuffer);
         }
 
@@ -136,18 +138,18 @@ public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
 
             stop = System.nanoTime();
 
-            org.chromium.base.Log.i(TAG,
+            android.util.Log.i(TAG,
                     "****** Cronet Request Completed, the latency is " + (stop - start));
 
-            org.chromium.base.Log.i(TAG,
+            android.util.Log.i(TAG,
                     "****** Cronet Request Completed, status code is " + info.getHttpStatusCode()
-                    + ", total received bytes is " + info.getReceivedBytesCount());
+                            + ", total received bytes is " + info.getReceivedBytesCount());
             // Set the latency
             ((MainActivity) context).addCronetLatency(stop - start);
 
             byte[] byteArray = bytesReceived.toByteArray();
             final Bitmap bimage = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length);
-            runOnUiThread(new Runnable() {
+            mainActivity.runOnUiThread(new Runnable() {
                 public void run() {
                     imageView.setImageBitmap(bimage);
                     imageView.getLayoutParams().height = bimage.getHeight();
@@ -158,7 +160,7 @@ public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
 
         @Override
         public void onFailed(UrlRequest request, UrlResponseInfo info, UrlRequestException error) {
-            org.chromium.base.Log.i(TAG, "****** onFailed, error is: " + error.getMessage());
+            android.util.Log.i(TAG, "****** onFailed, error is: " + error.getMessage());
 
         }
     }
@@ -176,8 +178,8 @@ public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
             // other information like QUIC server information, HTTP/2 protocol and QUIC protocol.
             cronetEngine = myBuilder
                     .enableHttpCache(CronetEngine.Builder.HTTP_CACHE_IN_MEMORY, 100 * 1024)
-                    .enableHTTP2(true)
-                    .enableQUIC(true)
+                    .enableHttp2(true)
+                    .enableQuic(true)
                     .build();
         }
         return cronetEngine;
