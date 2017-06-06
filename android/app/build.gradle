@@ -29,9 +29,9 @@ dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     testCompile 'junit:junit:4.12'
     compile ("com.android.support:appcompat-v7:${supportLibVersion}")
-    compile files('libs/android-57-cronet_impl_common_java.jar')
-    compile files('libs/android-57-cronet_impl_native_java.jar')
-    compile files('libs/android-57-release-cronet_api.jar')
+    compile files('libs/android-58-cronet_impl_common_java.jar')
+    compile files('libs/android-58-cronet_impl_native_java.jar')
+    compile files('libs/android-58-release-cronet_api.jar')
     compile 'com.squareup.okhttp3:okhttp:3.2.0'
     compile('com.android.support:recyclerview-v7:23.3.0')
     compile('com.android.support:percent:23.3.0')
