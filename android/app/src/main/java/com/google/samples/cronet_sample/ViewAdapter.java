@@ -29,8 +29,8 @@ import android.widget.ImageView;
 import com.google.samples.cronet_sample.data.ImageRepository;
 
 import org.chromium.net.CronetEngine;
+import org.chromium.net.CronetException;
 import org.chromium.net.UrlRequest;
-import org.chromium.net.UrlRequestException;
 import org.chromium.net.UrlResponseInfo;
 
 import java.io.ByteArrayOutputStream;
@@ -143,7 +143,7 @@ public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
 
             android.util.Log.i(TAG,
                     "****** Cronet Request Completed, status code is " + info.getHttpStatusCode()
-                            + ", total received bytes is " + info.getReceivedBytesCount());
+                            + ", total received bytes is " + info.getReceivedByteCount());
             // Set the latency
             ((MainActivity) context).addCronetLatency(stop - start);
 
@@ -159,9 +159,8 @@ public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
         }
 
         @Override
-        public void onFailed(UrlRequest request, UrlResponseInfo info, UrlRequestException error) {
-            android.util.Log.i(TAG, "****** onFailed, error is: " + error.getMessage());
-
+        public void onFailed(UrlRequest var1, UrlResponseInfo var2, CronetException var3) {
+            android.util.Log.i(TAG, "****** onFailed, error is: " + var3.getMessage());
         }
     }
 
