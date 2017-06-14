@@ -32,7 +32,7 @@ under the libs directory
 13. Under "app/src/main" create a directory named "jniLibs"
 14. Copy armeabi and armeabi-v7a into jniLibs, which should contain only subdirectories,
 not directly a '.so' file. If you typically use an emulator,
-copy x64_64 folder into jniLibs folder as well
+copy x86_64 folder into jniLibs folder as well
 
 ### License
 ---------------
