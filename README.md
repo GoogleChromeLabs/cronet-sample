@@ -9,8 +9,7 @@ is Chromium's Networking stack packaged as a library. This sample app shows how 
 It's a manual procedure to get the Cronet library into a project. To add the libraries to the
 sample, please follow the following steps:
 
-1. Go to [Cronet releases website]
-          (https://console.cloud.google.com/storage/browser/chromium-cronet/android)
+1. Go to [Cronet releases website](https://console.cloud.google.com/storage/browser/chromium-cronet/android)
 and choose the latest release
 2. Navigate to chromium-cronet/android/releasenumber/Release/cronet
 3. Get .jar files
