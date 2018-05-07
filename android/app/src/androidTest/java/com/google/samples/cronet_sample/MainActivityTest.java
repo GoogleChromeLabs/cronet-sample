@@ -39,7 +39,7 @@ public class MainActivityTest {
 
     @Rule
     public GrantPermissionRule writeStoragePermissionRule =
-            GrantPermissionRule .grant(permission.WRITE_EXTERNAL_STORAGE);
+            GrantPermissionRule.grant(permission.WRITE_EXTERNAL_STORAGE);
 
     @Test
     public void welcomeMessage_isDisplayed() throws InterruptedException {
