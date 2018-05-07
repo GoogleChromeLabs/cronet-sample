@@ -7,8 +7,9 @@ is Chromium's Networking stack packaged as a library. This sample app shows how 
 ### Getting Started
 ---------------
 1. Clone or download this repository.
-2. Import the project in Android studio (File => New => Import Project) by
-selecting the top level build.gradle file inside the "android" directory.
+2. Import the project in Android Studio (File &rightarrow; New &rightarrow;
+Import Project) by selecting the top level build.gradle file inside the
+"android" directory.
 3. Connect a physical Android device or start an emulator. 
 4. Run the app from Android Studio by pressing the "run" (green triangle)
 button. Alternatively,

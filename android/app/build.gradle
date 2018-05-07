@@ -33,7 +33,7 @@ ext {
 
 dependencies {
     implementation ("com.android.support:appcompat-v7:${supportLibVersion}")
-    implementation ("org.chromium.net:cronet-embedded:66.3350.12-alpha")
+    implementation ("org.chromium.net:cronet-embedded:66.3352.3-alpha")
     implementation ("com.android.support:recyclerview-v7:${supportLibVersion}")
     androidTestImplementation("com.android.support.test:runner:${androidTestVersion}")
     testImplementation 'junit:junit:4.12'
