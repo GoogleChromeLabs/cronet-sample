@@ -16,6 +16,7 @@ android {
         targetSdkVersion 27
         versionCode 1
         versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
         release {
@@ -27,14 +28,16 @@ android {
 
 ext {
     supportLibVersion = "27.1.1"
-    espressoVersion = "3.0.2"
-    androidTestVersion = "0.4"
+    androidTestVersion = "1.0.2"
 }
 
 dependencies {
-    implementation ("com.android.support:appcompat-v7:${supportLibVersion}")
-    implementation ("org.chromium.net:cronet-embedded:66.3352.3-alpha")
-    implementation ("com.android.support:recyclerview-v7:${supportLibVersion}")
-    androidTestImplementation("com.android.support.test:runner:${androidTestVersion}")
-    testImplementation 'junit:junit:4.12'
+    implementation "org.chromium.net:cronet-embedded:66.3352.3-alpha"
+    implementation "com.android.support:appcompat-v7:${supportLibVersion}"
+    implementation "com.android.support:recyclerview-v7:${supportLibVersion}"
+    testImplementation "junit:junit:4.12"
+    androidTestImplementation "com.android.support.test:runner:${androidTestVersion}"
+    androidTestImplementation "com.android.support.test:rules:${androidTestVersion}"
+    androidTestImplementation "com.android.support.test.espresso:espresso-core:3.0.2"
+
 }

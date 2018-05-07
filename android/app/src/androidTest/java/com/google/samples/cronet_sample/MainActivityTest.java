@@ -16,7 +16,9 @@
 
 package com.google.samples.cronet_sample;
 
+import android.Manifest.permission;
 import android.support.test.rule.ActivityTestRule;
+import android.support.test.rule.GrantPermissionRule;
 import android.support.test.runner.AndroidJUnit4;
 
 import org.junit.Rule;
@@ -34,6 +36,10 @@ public class MainActivityTest {
     @Rule
     public ActivityTestRule<MainActivity> menuActivityTestRule =
             new ActivityTestRule<>(MainActivity.class, true, true);
+
+    @Rule
+    public GrantPermissionRule writeStoragePermissionRule =
+            GrantPermissionRule .grant(permission.WRITE_EXTERNAL_STORAGE);
 
     @Test
     public void welcomeMessage_isDisplayed() throws InterruptedException {
