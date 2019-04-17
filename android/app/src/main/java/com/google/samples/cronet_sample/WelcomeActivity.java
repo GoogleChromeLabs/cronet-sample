@@ -22,6 +22,11 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
+import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
+import com.google.android.gms.common.GooglePlayServicesRepairableException;
+import com.google.android.gms.net.CronetProviderInstaller;
+import com.google.android.gms.tasks.Task;
 
 public class WelcomeActivity extends AppCompatActivity{
 
@@ -39,8 +44,30 @@ public class WelcomeActivity extends AppCompatActivity{
 
     }
     public void openImages(View view) {
-        Intent mpdIntent = new Intent(this, MainActivity.class);
-        startActivity(mpdIntent);
+        Task<Void> installTask = CronetProviderInstaller.installProvider(this);
+        installTask.addOnCompleteListener(
+            task -> {
+                if (task.isSuccessful()) {
+                    Intent mpdIntent = new Intent(this, MainActivity.class);
+                    startActivity(mpdIntent);
+                } else if (task.getException() != null) {
+                    Exception cause = task.getException();
+                    if (cause instanceof GooglePlayServicesNotAvailableException) {
+                        Toast.makeText(this, "Google Play services not available.",
+                                Toast.LENGTH_SHORT).show();
+                    } else if (cause instanceof GooglePlayServicesRepairableException) {
+                        Toast.makeText(this, "Google Play services update is required.",
+                                Toast.LENGTH_SHORT).show();
+                        startActivity(((GooglePlayServicesRepairableException) cause).getIntent());
+                    } else {
+                        Toast.makeText(this, "Unexpected error: " + cause,
+                                Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    Toast.makeText(this, "Unable to load Google Play services.",
+                            Toast.LENGTH_SHORT).show();
+                }
+            });
     }
 
     private void setUpToolbar() {
@@ -48,7 +75,6 @@ public class WelcomeActivity extends AppCompatActivity{
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayShowTitleEnabled(false);
         ((TextView) toolbar.findViewById(R.id.welcome_title)).setText(R.string.welcome_activity);
-
     }
 
 }

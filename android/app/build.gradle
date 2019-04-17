@@ -32,7 +32,7 @@ ext {
 }
 
 dependencies {
-    implementation "org.chromium.net:cronet-embedded:66.3359.158"
+    implementation "com.google.android.gms:play-services-cronet:16.0.0"
     implementation "com.android.support:appcompat-v7:${supportLibVersion}"
     implementation "com.android.support:recyclerview-v7:${supportLibVersion}"
     testImplementation "junit:junit:4.12"
