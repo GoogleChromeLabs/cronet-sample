@@ -19,20 +19,12 @@ import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.os.Environment;
-import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-
+import androidx.recyclerview.widget.RecyclerView;
 import com.google.samples.cronet_sample.data.ImageRepository;
-
-import org.chromium.net.CronetEngine;
-import org.chromium.net.CronetException;
-import org.chromium.net.UrlRequest;
-import org.chromium.net.UrlResponseInfo;
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -41,6 +33,10 @@ import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import org.chromium.net.CronetEngine;
+import org.chromium.net.CronetException;
+import org.chromium.net.UrlRequest;
+import org.chromium.net.UrlResponseInfo;
 
 public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
 
@@ -50,7 +46,7 @@ public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
 
     public ViewAdapter(Context context) {
         this.context = context;
-        getCronetEngine(context);
+        setCronetEngine(context);
         startNetLog();
     }
 
@@ -63,19 +59,21 @@ public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        public ImageView mImageViewCronet;
+        private ImageView mImageViewCronet;
 
         public ViewHolder(View v) {
             super(v);
             mImageViewCronet = (ImageView) itemView.findViewById(R.id.cronet_image);
         }
+
+        public ImageView getmImageViewCronet() { return mImageViewCronet; }
     }
 
     @Override
     public void onBindViewHolder(final ViewHolder holder, int position) {
         // Create an executor to execute the request
         Executor executor = Executors.newSingleThreadExecutor();
-        UrlRequest.Callback callback = new SimpleUrlRequestCallback(holder.mImageViewCronet,
+        UrlRequest.Callback callback = new SimpleUrlRequestCallback(holder.getmImageViewCronet(),
                 this.context);
         UrlRequest.Builder builder = cronetEngine.newUrlRequestBuilder(
                 ImageRepository.getImage(position), callback, executor);
@@ -149,12 +147,10 @@ public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
 
             byte[] byteArray = bytesReceived.toByteArray();
             final Bitmap bimage = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length);
-            mainActivity.runOnUiThread(new Runnable() {
-                public void run() {
-                    imageView.setImageBitmap(bimage);
-                    imageView.getLayoutParams().height = bimage.getHeight();
-                    imageView.getLayoutParams().width = bimage.getWidth();
-                }
+            mainActivity.runOnUiThread(() -> {
+                imageView.setImageBitmap(bimage);
+                imageView.getLayoutParams().height = bimage.getHeight();
+                imageView.getLayoutParams().width = bimage.getWidth();
             });
         }
 
@@ -169,7 +165,7 @@ public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
         return ImageRepository.numberOfImages();
     }
 
-    private static synchronized CronetEngine getCronetEngine(Context context) {
+    private static synchronized void setCronetEngine(Context context) {
         // Lazily create the Cronet engine.
         if (cronetEngine == null) {
             CronetEngine.Builder myBuilder = new CronetEngine.Builder(context);
@@ -181,7 +177,6 @@ public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
                     .enableQuic(true)
                     .build();
         }
-        return cronetEngine;
     }
 
     /**
@@ -191,7 +186,7 @@ public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
         File outputFile;
         try {
             outputFile = File.createTempFile("cronet", "log",
-                    Environment.getExternalStorageDirectory());
+                context.getExternalFilesDir(null));
             cronetEngine.startNetLogToFile(outputFile.toString(), false);
         } catch (IOException e) {
             e.printStackTrace();

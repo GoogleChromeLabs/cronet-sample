@@ -17,12 +17,11 @@ package com.google.samples.cronet_sample;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.view.View;
-import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.net.CronetProviderInstaller;
@@ -36,7 +35,6 @@ public class WelcomeActivity extends AppCompatActivity{
         setContentView(R.layout.welcome_layout);
         setUpToolbar();
 
-        final Button imagesButton = (Button) findViewById(R.id.images_button);
         ((TextView) findViewById(R.id.welcome_introduction))
                 .setText(R.string.welcome_introduction_text);
         ((TextView) findViewById(R.id.cronet_load_images))
