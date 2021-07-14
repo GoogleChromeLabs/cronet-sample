@@ -121,6 +121,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
             this.cronetLatency.set(averageLatency);
+            viewAdapter.stopNetLog();
         }
     }
 }

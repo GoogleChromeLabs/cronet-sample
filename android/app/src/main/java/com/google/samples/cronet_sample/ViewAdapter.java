@@ -192,4 +192,12 @@ public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
             e.printStackTrace();
         }
     }
+
+
+    /**
+     * Method to properly stop NetLog
+     */
+    public void stopNetLog() {
+        cronetEngine.stopNetLog();
+    }
 }
