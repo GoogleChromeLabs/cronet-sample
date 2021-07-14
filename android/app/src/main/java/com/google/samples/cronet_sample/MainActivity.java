@@ -16,6 +16,7 @@
 package com.google.samples.cronet_sample;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.widget.TextView;
@@ -41,6 +42,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Thread.setDefaultUncaughtExceptionHandler(
+            new ExceptionHandler());
         setContentView(R.layout.images_activity);
         setUpToolbar();
         swipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.images_activity_layout);
@@ -52,10 +55,11 @@ public class MainActivity extends AppCompatActivity {
         numberOfImages = 0;
 
         RecyclerView cronetView = (RecyclerView) findViewById(R.id.images_view);
-        GridLayoutManager gridLayoutManager =
-                new GridLayoutManager(this, 2);
 
         viewAdapter = new ViewAdapter(this);
+        CustomGridLayoutManager gridLayoutManager =
+                new CustomGridLayoutManager(this, 2, viewAdapter);
+
         // In order to enable Netlog, a Cronet logging system, enable write permissions.
         // Find more info about Netlog here:
         // https://www.chromium.org/developers/design-documents/network-stack/netlog
@@ -66,6 +70,21 @@ public class MainActivity extends AppCompatActivity {
         cronetView.setItemAnimator(new DefaultItemAnimator());
         onItemsLoadComplete();
 
+    }
+
+    private static class CustomGridLayoutManager extends GridLayoutManager {
+        private ViewAdapter viewAdapter;
+
+        public CustomGridLayoutManager(Context context, int spanCount, ViewAdapter viewAdapter) {
+            super(context, spanCount);
+            this.viewAdapter = viewAdapter;
+        }
+
+        // stop network logging oce our requests are done
+        public void onLayoutCompleted(RecyclerView.State state) {
+            super.onLayoutCompleted(state);
+            viewAdapter.stopNetLog();
+        }
     }
 
     private void enableWritingPermissionForLogging() {
@@ -121,7 +140,17 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
             this.cronetLatency.set(averageLatency);
+            // viewAdapter.stopNetLog();
+        }
+    }
+
+    // properly end network logging when app crashes
+    private class ExceptionHandler implements Thread.UncaughtExceptionHandler {
+        public void uncaughtException(Thread thread, Throwable exception) {
+            android.util.Log.e(TAG, exception.getLocalizedMessage());
+            exception.printStackTrace();
             viewAdapter.stopNetLog();
         }
     }
+
 }

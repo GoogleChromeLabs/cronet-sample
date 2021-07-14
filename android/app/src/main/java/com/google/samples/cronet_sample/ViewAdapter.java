@@ -15,6 +15,8 @@
  */
 package com.google.samples.cronet_sample;
 
+import static java.net.HttpURLConnection.HTTP_OK;
+
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -145,6 +147,7 @@ public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
             // Set the latency
             ((MainActivity) context).addCronetLatency(stop - start);
 
+            // Send image to layout
             byte[] byteArray = bytesReceived.toByteArray();
             final Bitmap bimage = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length);
             mainActivity.runOnUiThread(() -> {
