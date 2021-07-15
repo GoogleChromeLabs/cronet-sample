@@ -16,7 +16,6 @@
 package com.google.samples.cronet_sample;
 
 import android.Manifest;
-import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.widget.TextView;
@@ -28,7 +27,10 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.google.samples.cronet_sample.data.ImageRepository;
+import java.io.File;
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
+import org.chromium.net.CronetEngine;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -38,17 +40,31 @@ public class MainActivity extends AppCompatActivity {
     private long totalLatency;
     private long numberOfImages;
     private ViewAdapter viewAdapter;
+    public static CronetEngine cronetEngine;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Thread.setDefaultUncaughtExceptionHandler(
-            new ExceptionHandler());
+
+        // set up cronet engine and it's logging mechanism
+        Thread.setDefaultUncaughtExceptionHandler(new ExceptionHandler());
+        setCronetEngine();
+        startNetLog();
+
         setContentView(R.layout.images_activity);
         setUpToolbar();
-        swipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.images_activity_layout);
+        swipeRefreshLayout = findViewById(R.id.images_activity_layout);
         swipeRefreshLayout.setOnRefreshListener(() -> loadItems());
         loadItems();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        // ensure logging is stopped properly when activity is ended, either by system or
+        // by clicking the back button
+        stopNetLog();
     }
 
     private void loadItems() {
@@ -57,8 +73,8 @@ public class MainActivity extends AppCompatActivity {
         RecyclerView cronetView = (RecyclerView) findViewById(R.id.images_view);
 
         viewAdapter = new ViewAdapter(this);
-        CustomGridLayoutManager gridLayoutManager =
-                new CustomGridLayoutManager(this, 2, viewAdapter);
+        GridLayoutManager gridLayoutManager =
+                new GridLayoutManager(this, 2);
 
         // In order to enable Netlog, a Cronet logging system, enable write permissions.
         // Find more info about Netlog here:
@@ -70,21 +86,6 @@ public class MainActivity extends AppCompatActivity {
         cronetView.setItemAnimator(new DefaultItemAnimator());
         onItemsLoadComplete();
 
-    }
-
-    private static class CustomGridLayoutManager extends GridLayoutManager {
-        private ViewAdapter viewAdapter;
-
-        public CustomGridLayoutManager(Context context, int spanCount, ViewAdapter viewAdapter) {
-            super(context, spanCount);
-            this.viewAdapter = viewAdapter;
-        }
-
-        // stop network logging oce our requests are done
-        public void onLayoutCompleted(RecyclerView.State state) {
-            super.onLayoutCompleted(state);
-            viewAdapter.stopNetLog();
-        }
     }
 
     private void enableWritingPermissionForLogging() {
@@ -140,17 +141,49 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
             this.cronetLatency.set(averageLatency);
-            // viewAdapter.stopNetLog();
         }
     }
 
+    private synchronized void setCronetEngine() {
+        // Lazily create the Cronet engine.
+        if (cronetEngine == null) {
+            CronetEngine.Builder myBuilder = new CronetEngine.Builder(this);
+            // Enable caching of HTTP data and
+            // other information like QUIC server information, HTTP/2 protocol and QUIC protocol.
+            cronetEngine = myBuilder
+                .enableHttpCache(CronetEngine.Builder.HTTP_CACHE_IN_MEMORY, 100 * 1024)
+                .enableHttp2(true)
+                .enableQuic(true)
+                .build();
+        }
+    }
+
+    /**
+     * Method to start NetLog to log Cronet events
+     */
+    private void startNetLog() {
+        File outputFile;
+        try {
+            outputFile = File.createTempFile("cronet", "log",
+                this.getExternalFilesDir(null));
+            cronetEngine.startNetLogToFile(outputFile.toString(), false);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Method to properly stop NetLog
+     */
+    private void stopNetLog() {
+        cronetEngine.stopNetLog();
+    }
     // properly end network logging when app crashes
     private class ExceptionHandler implements Thread.UncaughtExceptionHandler {
         public void uncaughtException(Thread thread, Throwable exception) {
             android.util.Log.e(TAG, exception.getLocalizedMessage());
             exception.printStackTrace();
-            viewAdapter.stopNetLog();
+            stopNetLog();
         }
     }
-
 }
