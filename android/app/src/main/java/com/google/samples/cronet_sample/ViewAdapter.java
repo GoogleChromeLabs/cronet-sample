@@ -39,7 +39,7 @@ import org.chromium.net.UrlResponseInfo;
 public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
 
     private static final String TAG = "ViewAdapter";
-    private Context context;
+    private final Context context;
 
     public ViewAdapter(Context context) {
         this.context = context;
@@ -50,8 +50,7 @@ public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
     public ViewAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View v = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.image_layout, null);
-        ViewHolder vh = new ViewHolder(v);
-        return vh;
+        return new ViewHolder(v);
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
@@ -59,7 +58,7 @@ public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
 
         public ViewHolder(View v) {
             super(v);
-            mImageViewCronet = (ImageView) itemView.findViewById(R.id.cronet_image);
+            mImageViewCronet = itemView.findViewById(R.id.cronet_image);
         }
 
         public ImageView getmImageViewCronet() { return mImageViewCronet; }
@@ -69,13 +68,13 @@ public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
     public void onBindViewHolder(final ViewHolder holder, int position) {
         // Create an executor to execute the request
         Executor executor = Executors.newSingleThreadExecutor();
-        UrlRequest.Callback callback = new SimpleUrlRequestCallback(holder.getmImageViewCronet(),
+        SimpleUrlRequestCallback callback = new SimpleUrlRequestCallback(holder.getmImageViewCronet(),
                 context);
-        UrlRequest.Builder builder = ((MainActivity) context).cronetEngine.newUrlRequestBuilder(
+        UrlRequest.Builder builder = MainActivity.cronetEngine.newUrlRequestBuilder(
                 ImageRepository.getImage(position), callback, executor);
         // Measure the start time of the request so that
         // we can measure latency of the entire request cycle
-        ((SimpleUrlRequestCallback) callback).start = System.nanoTime();
+        callback.start = System.nanoTime();
         // Start the request
         builder.build().start();
 
@@ -86,12 +85,11 @@ public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
      */
     class SimpleUrlRequestCallback extends UrlRequest.Callback {
 
-        private ByteArrayOutputStream bytesReceived = new ByteArrayOutputStream();
-        private WritableByteChannel receiveChannel = Channels.newChannel(bytesReceived);
-        private ImageView imageView;
+        private final ByteArrayOutputStream bytesReceived = new ByteArrayOutputStream();
+        private final WritableByteChannel receiveChannel = Channels.newChannel(bytesReceived);
+        private final ImageView imageView;
+        private final Activity mainActivity;
         public long start;
-        private long stop;
-        private Activity mainActivity;
 
         SimpleUrlRequestCallback(ImageView imageView, Context context) {
             this.imageView = imageView;
@@ -130,7 +128,7 @@ public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
         @Override
         public void onSucceeded(UrlRequest request, UrlResponseInfo info) {
 
-            stop = System.nanoTime();
+            long stop = System.nanoTime();
 
             android.util.Log.i(TAG,
                     "****** Cronet Request Completed, the latency is " + (stop - start));

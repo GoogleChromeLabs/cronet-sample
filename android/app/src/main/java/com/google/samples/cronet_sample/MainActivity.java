@@ -36,10 +36,9 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
     private SwipeRefreshLayout swipeRefreshLayout;
-    private AtomicLong cronetLatency = new AtomicLong();
+    private final AtomicLong cronetLatency = new AtomicLong();
     private long totalLatency;
     private long numberOfImages;
-    private ViewAdapter viewAdapter;
     public static CronetEngine cronetEngine;
 
     @Override
@@ -70,14 +69,13 @@ public class MainActivity extends AppCompatActivity {
     private void loadItems() {
         numberOfImages = 0;
 
-        RecyclerView cronetView = (RecyclerView) findViewById(R.id.images_view);
+        RecyclerView cronetView = findViewById(R.id.images_view);
 
-        viewAdapter = new ViewAdapter(this);
         GridLayoutManager gridLayoutManager =
                 new GridLayoutManager(this, 2);
 
         cronetView.setLayoutManager(gridLayoutManager);
-        cronetView.setAdapter(viewAdapter);
+        cronetView.setAdapter(new ViewAdapter(this));
         cronetView.setItemAnimator(new DefaultItemAnimator());
         onItemsLoadComplete();
 
@@ -110,7 +108,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setUpToolbar() {
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar =  findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayShowTitleEnabled(false);
         ((TextView) toolbar.findViewById(R.id.title)).setText(R.string.toolbar_title);
@@ -129,7 +127,7 @@ public class MainActivity extends AppCompatActivity {
             final long averageLatency = totalLatency / numberOfImages;
             android.util.Log.i(TAG,
                     "All Cronet Requests Complete, the average latency is " + averageLatency);
-            final TextView cronetTime = (TextView) findViewById(R.id.cronet_time_label);
+            final TextView cronetTime = findViewById(R.id.cronet_time_label);
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
