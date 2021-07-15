@@ -76,11 +76,6 @@ public class MainActivity extends AppCompatActivity {
         GridLayoutManager gridLayoutManager =
                 new GridLayoutManager(this, 2);
 
-        // In order to enable Netlog, a Cronet logging system, enable write permissions.
-        // Find more info about Netlog here:
-        // https://www.chromium.org/developers/design-documents/network-stack/netlog
-        enableWritingPermissionForLogging();
-
         cronetView.setLayoutManager(gridLayoutManager);
         cronetView.setAdapter(viewAdapter);
         cronetView.setItemAnimator(new DefaultItemAnimator());
@@ -88,6 +83,8 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    // External storage access is not allowed for android api level >= 30
+    // See doc: https://developer.android.com/about/versions/11/privacy/storage
     private void enableWritingPermissionForLogging() {
         int REQUEST_EXTERNAL_STORAGE = 1;
         String[] PERMISSIONS_STORAGE = {
@@ -159,7 +156,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * Method to start NetLog to log Cronet events
+     * Method to start NetLog to log Cronet events.
+     * Find more info about Netlog here:
+     * https://www.chromium.org/developers/design-documents/network-stack/netlog
      */
     private void startNetLog() {
         File outputFile;
