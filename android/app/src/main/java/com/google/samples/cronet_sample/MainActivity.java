@@ -115,11 +115,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setCronetEngine() {
-        // create the Cronet engine.
-        CronetEngine.Builder myBuilder = new CronetEngine.Builder(this);
-        // Enable caching of HTTP data and
+        // create the Cronet engine, enable caching of HTTP data and
         // other information like QUIC server information, HTTP/2 protocol and QUIC protocol.
-        cronetEngine = myBuilder
+        cronetEngine = new CronetEngine.Builder(this)
             .enableHttpCache(CronetEngine.Builder.HTTP_CACHE_IN_MEMORY, 100 * 1024)
             .enableHttp2(true)
             .enableQuic(true)

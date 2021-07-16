@@ -39,10 +39,10 @@ import org.chromium.net.UrlResponseInfo;
 public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
 
     private static final String TAG = "ViewAdapter";
-    private final Context context;
+    private final MainActivity mainActivity;
 
-    public ViewAdapter(Context context) {
-        this.context = context;
+    public ViewAdapter(MainActivity mainActivity) {
+        this.mainActivity = mainActivity;
     }
 
     @Override
@@ -68,8 +68,8 @@ public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
         // Create an executor to execute the request
         Executor executor = Executors.newSingleThreadExecutor();
         SimpleUrlRequestCallback callback = new SimpleUrlRequestCallback(holder.getmImageViewCronet(),
-                context);
-        UrlRequest.Builder builder = ((MainActivity) context).getCronetEngine().newUrlRequestBuilder(
+                mainActivity);
+        UrlRequest.Builder builder = mainActivity.getCronetEngine().newUrlRequestBuilder(
                 ImageRepository.getImage(position), callback, executor);
         // Measure the start time of the request so that
         // we can measure latency of the entire request cycle
@@ -87,12 +87,12 @@ public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
         private final ByteArrayOutputStream bytesReceived = new ByteArrayOutputStream();
         private final WritableByteChannel receiveChannel = Channels.newChannel(bytesReceived);
         private final ImageView imageView;
-        private final Activity mainActivity;
+        private final MainActivity mainActivity;
         public long start;
 
-        SimpleUrlRequestCallback(ImageView imageView, Context context) {
+        SimpleUrlRequestCallback(ImageView imageView, MainActivity mainActivity) {
             this.imageView = imageView;
-            this.mainActivity = (Activity) context;
+            this.mainActivity = mainActivity;
         }
 
         @Override
@@ -136,7 +136,7 @@ public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
                     "****** Cronet Request Completed, status code is " + info.getHttpStatusCode()
                             + ", total received bytes is " + info.getReceivedByteCount());
             // Set the latency
-            ((MainActivity) context).addCronetLatency(stop - start);
+            mainActivity.addCronetLatency(stop - start);
 
             // Send image to layout
             byte[] byteArray = bytesReceived.toByteArray();
