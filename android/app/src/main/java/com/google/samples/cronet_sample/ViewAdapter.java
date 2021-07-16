@@ -43,7 +43,6 @@ public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
 
     public ViewAdapter(Context context) {
         this.context = context;
-
     }
 
     @Override
@@ -54,7 +53,7 @@ public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        private ImageView mImageViewCronet;
+        private final ImageView mImageViewCronet;
 
         public ViewHolder(View v) {
             super(v);
@@ -70,7 +69,7 @@ public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
         Executor executor = Executors.newSingleThreadExecutor();
         SimpleUrlRequestCallback callback = new SimpleUrlRequestCallback(holder.getmImageViewCronet(),
                 context);
-        UrlRequest.Builder builder = MainActivity.cronetEngine.newUrlRequestBuilder(
+        UrlRequest.Builder builder = ((MainActivity) context).getCronetEngine().newUrlRequestBuilder(
                 ImageRepository.getImage(position), callback, executor);
         // Measure the start time of the request so that
         // we can measure latency of the entire request cycle

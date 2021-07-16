@@ -15,13 +15,10 @@
  */
 package com.google.samples.cronet_sample;
 
-import android.Manifest;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -39,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
     private final AtomicLong cronetLatency = new AtomicLong();
     private long totalLatency;
     private long numberOfImages;
-    public static CronetEngine cronetEngine;
+    private CronetEngine cronetEngine;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,28 +78,6 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    // External storage access is not allowed for android api level >= 30
-    // See doc: https://developer.android.com/about/versions/11/privacy/storage
-    private void enableWritingPermissionForLogging() {
-        int REQUEST_EXTERNAL_STORAGE = 1;
-        String[] PERMISSIONS_STORAGE = {
-                Manifest.permission.READ_EXTERNAL_STORAGE,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
-        };
-
-        int permission = ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE);
-
-        if (permission != PackageManager.PERMISSION_GRANTED) {
-            // We don't have permission so prompt the user
-            ActivityCompat.requestPermissions(
-                    this,
-                    PERMISSIONS_STORAGE,
-                    REQUEST_EXTERNAL_STORAGE
-            );
-        }
-    }
-
     private void onItemsLoadComplete() {
         swipeRefreshLayout.setRefreshing(false);
     }
@@ -139,19 +114,20 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private synchronized void setCronetEngine() {
-        // Lazily create the Cronet engine.
-        if (cronetEngine == null) {
-            CronetEngine.Builder myBuilder = new CronetEngine.Builder(this);
-            // Enable caching of HTTP data and
-            // other information like QUIC server information, HTTP/2 protocol and QUIC protocol.
-            cronetEngine = myBuilder
-                .enableHttpCache(CronetEngine.Builder.HTTP_CACHE_IN_MEMORY, 100 * 1024)
-                .enableHttp2(true)
-                .enableQuic(true)
-                .build();
-        }
+    private void setCronetEngine() {
+        // create the Cronet engine.
+        CronetEngine.Builder myBuilder = new CronetEngine.Builder(this);
+        // Enable caching of HTTP data and
+        // other information like QUIC server information, HTTP/2 protocol and QUIC protocol.
+        cronetEngine = myBuilder
+            .enableHttpCache(CronetEngine.Builder.HTTP_CACHE_IN_MEMORY, 100 * 1024)
+            .enableHttp2(true)
+            .enableQuic(true)
+            .build();
+
     }
+
+    public CronetEngine getCronetEngine() { return cronetEngine; }
 
     /**
      * Method to start NetLog to log Cronet events.
@@ -165,7 +141,7 @@ public class MainActivity extends AppCompatActivity {
                 this.getExternalFilesDir(null));
             cronetEngine.startNetLogToFile(outputFile.toString(), false);
         } catch (IOException e) {
-            e.printStackTrace();
+            android.util.Log.e(TAG, e.toString());
         }
     }
 
@@ -175,11 +151,11 @@ public class MainActivity extends AppCompatActivity {
     private void stopNetLog() {
         cronetEngine.stopNetLog();
     }
+
     // properly end network logging when app crashes
     private class ExceptionHandler implements Thread.UncaughtExceptionHandler {
         public void uncaughtException(Thread thread, Throwable exception) {
-            android.util.Log.e(TAG, exception.getLocalizedMessage());
-            exception.printStackTrace();
+            android.util.Log.e(TAG, exception.toString());
             stopNetLog();
         }
     }
