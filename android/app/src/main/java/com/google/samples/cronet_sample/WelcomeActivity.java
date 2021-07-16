@@ -39,8 +39,8 @@ public class WelcomeActivity extends AppCompatActivity{
                 .setText(R.string.welcome_introduction_text);
         ((TextView) findViewById(R.id.cronet_load_images))
                 .setText(R.string.cronet_load_images_text);
-
     }
+
     public void openImages(View view) {
         Task<Void> installTask = CronetProviderInstaller.installProvider(this);
         installTask.addOnCompleteListener(
@@ -69,10 +69,9 @@ public class WelcomeActivity extends AppCompatActivity{
     }
 
     private void setUpToolbar() {
-        Toolbar toolbar = (Toolbar) findViewById(R.id.welcome_toolbar);
+        Toolbar toolbar = findViewById(R.id.welcome_toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayShowTitleEnabled(false);
         ((TextView) toolbar.findViewById(R.id.welcome_title)).setText(R.string.welcome_activity);
     }
-
 }

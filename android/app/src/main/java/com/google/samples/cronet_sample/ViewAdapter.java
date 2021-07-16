@@ -26,14 +26,12 @@ import android.widget.ImageView;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.samples.cronet_sample.data.ImageRepository;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import org.chromium.net.CronetEngine;
 import org.chromium.net.CronetException;
 import org.chromium.net.UrlRequest;
 import org.chromium.net.UrlResponseInfo;
@@ -41,29 +39,25 @@ import org.chromium.net.UrlResponseInfo;
 public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
 
     private static final String TAG = "ViewAdapter";
-    private static CronetEngine cronetEngine;
-    private Context context;
+    private final MainActivity mainActivity;
 
-    public ViewAdapter(Context context) {
-        this.context = context;
-        setCronetEngine(context);
-        startNetLog();
+    public ViewAdapter(MainActivity mainActivity) {
+        this.mainActivity = mainActivity;
     }
 
     @Override
     public ViewAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View v = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.image_layout, null);
-        ViewHolder vh = new ViewHolder(v);
-        return vh;
+        return new ViewHolder(v);
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        private ImageView mImageViewCronet;
+        private final ImageView mImageViewCronet;
 
         public ViewHolder(View v) {
             super(v);
-            mImageViewCronet = (ImageView) itemView.findViewById(R.id.cronet_image);
+            mImageViewCronet = itemView.findViewById(R.id.cronet_image);
         }
 
         public ImageView getmImageViewCronet() { return mImageViewCronet; }
@@ -73,13 +67,13 @@ public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
     public void onBindViewHolder(final ViewHolder holder, int position) {
         // Create an executor to execute the request
         Executor executor = Executors.newSingleThreadExecutor();
-        UrlRequest.Callback callback = new SimpleUrlRequestCallback(holder.getmImageViewCronet(),
-                this.context);
-        UrlRequest.Builder builder = cronetEngine.newUrlRequestBuilder(
+        SimpleUrlRequestCallback callback = new SimpleUrlRequestCallback(holder.getmImageViewCronet(),
+                mainActivity);
+        UrlRequest.Builder builder = mainActivity.getCronetEngine().newUrlRequestBuilder(
                 ImageRepository.getImage(position), callback, executor);
         // Measure the start time of the request so that
         // we can measure latency of the entire request cycle
-        ((SimpleUrlRequestCallback) callback).start = System.nanoTime();
+        callback.start = System.nanoTime();
         // Start the request
         builder.build().start();
 
@@ -90,16 +84,15 @@ public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
      */
     class SimpleUrlRequestCallback extends UrlRequest.Callback {
 
-        private ByteArrayOutputStream bytesReceived = new ByteArrayOutputStream();
-        private WritableByteChannel receiveChannel = Channels.newChannel(bytesReceived);
-        private ImageView imageView;
+        private final ByteArrayOutputStream bytesReceived = new ByteArrayOutputStream();
+        private final WritableByteChannel receiveChannel = Channels.newChannel(bytesReceived);
+        private final ImageView imageView;
+        private final MainActivity mainActivity;
         public long start;
-        private long stop;
-        private Activity mainActivity;
 
-        SimpleUrlRequestCallback(ImageView imageView, Context context) {
+        SimpleUrlRequestCallback(ImageView imageView, MainActivity mainActivity) {
             this.imageView = imageView;
-            this.mainActivity = (Activity) context;
+            this.mainActivity = mainActivity;
         }
 
         @Override
@@ -134,7 +127,7 @@ public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
         @Override
         public void onSucceeded(UrlRequest request, UrlResponseInfo info) {
 
-            stop = System.nanoTime();
+            long stop = System.nanoTime();
 
             android.util.Log.i(TAG,
                     "****** Cronet Request Completed, the latency is " + (stop - start));
@@ -143,8 +136,9 @@ public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
                     "****** Cronet Request Completed, status code is " + info.getHttpStatusCode()
                             + ", total received bytes is " + info.getReceivedByteCount());
             // Set the latency
-            ((MainActivity) context).addCronetLatency(stop - start);
+            mainActivity.addCronetLatency(stop - start);
 
+            // Send image to layout
             byte[] byteArray = bytesReceived.toByteArray();
             final Bitmap bimage = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length);
             mainActivity.runOnUiThread(() -> {
@@ -163,33 +157,5 @@ public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
     @Override
     public int getItemCount() {
         return ImageRepository.numberOfImages();
-    }
-
-    private static synchronized void setCronetEngine(Context context) {
-        // Lazily create the Cronet engine.
-        if (cronetEngine == null) {
-            CronetEngine.Builder myBuilder = new CronetEngine.Builder(context);
-            // Enable caching of HTTP data and
-            // other information like QUIC server information, HTTP/2 protocol and QUIC protocol.
-            cronetEngine = myBuilder
-                    .enableHttpCache(CronetEngine.Builder.HTTP_CACHE_IN_MEMORY, 100 * 1024)
-                    .enableHttp2(true)
-                    .enableQuic(true)
-                    .build();
-        }
-    }
-
-    /**
-     * Method to start NetLog to log Cronet events
-     */
-    private void startNetLog() {
-        File outputFile;
-        try {
-            outputFile = File.createTempFile("cronet", "log",
-                context.getExternalFilesDir(null));
-            cronetEngine.startNetLogToFile(outputFile.toString(), false);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 }
