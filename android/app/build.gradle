@@ -12,7 +12,9 @@ android {
 
     defaultConfig {
         applicationId "com.google.samples.cronet_sample"
-        minSdkVersion 16
+        // Cronet itself supports devices down to JellyBean, but the test app makes use of
+        // language constructs such as streams that aren't supported in lower versions.
+        minSdkVersion 24
         targetSdkVersion 30
         versionCode 1
         versionName "1.0"

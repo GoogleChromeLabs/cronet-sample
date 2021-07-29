@@ -31,8 +31,8 @@ import org.junit.runner.RunWith;
 public class WelcomeActivityTest {
 
     @Rule
-    public ActivityScenarioRule<MainActivity> menuActivityTestRule =
-        new ActivityScenarioRule<>(MainActivity.class);
+    public ActivityScenarioRule<WelcomeActivity> menuActivityTestRule =
+        new ActivityScenarioRule<>(WelcomeActivity.class);
 
     @Test
     public void welcomeMessage_isDisplayed() throws InterruptedException {
