@@ -15,30 +15,22 @@
  */
 package com.google.samples.cronet_sample;
 
-import android.app.Activity;
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.google.samples.cronet_sample.data.ImageRepository;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
-import java.nio.channels.WritableByteChannel;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import org.chromium.net.CronetException;
+
 import org.chromium.net.UrlRequest;
 import org.chromium.net.UrlResponseInfo;
 
 public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
 
-    private static final String TAG = "ViewAdapter";
     private final MainActivity mainActivity;
 
     public ViewAdapter(MainActivity mainActivity) {
@@ -60,102 +52,60 @@ public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
             mImageViewCronet = itemView.findViewById(R.id.cronet_image);
         }
 
-        public ImageView getmImageViewCronet() { return mImageViewCronet; }
+        public ImageView getmImageViewCronet() {
+            return mImageViewCronet;
+        }
     }
 
     @Override
     public void onBindViewHolder(final ViewHolder holder, int position) {
-        // Create an executor to execute the request
-        Executor executor = Executors.newSingleThreadExecutor();
-        SimpleUrlRequestCallback callback = new SimpleUrlRequestCallback(holder.getmImageViewCronet(),
-                mainActivity);
-        UrlRequest.Builder builder = mainActivity.getCronetEngine().newUrlRequestBuilder(
-                ImageRepository.getImage(position), callback, executor);
-        // Measure the start time of the request so that
-        // we can measure latency of the entire request cycle
-        callback.start = System.nanoTime();
+        CronetApplication cronetApplication = mainActivity.getCronetApplication();
+
+        // UrlRequest and UrlRequest.Callback are the core of Cronet operations. UrlRequest is used
+        // to issue requests, UrlRequest.Callback specifies how the application reacts to the server
+        // responses.
+
+        // Set up a callback which, on a successful read of the entire response, interprets
+        // the response body as an image. By default, Cronet reads the body in small parts, having
+        // the full body as a byte array is application specific logic. For more details about
+        // the callbacks please see implementation of ReadToMemoryCronetCallback.
+        ReadToMemoryCronetCallback callback = new ReadToMemoryCronetCallback() {
+            @Override
+            void onSucceeded(UrlRequest request, UrlResponseInfo info, byte[] bodyBytes,
+                             long latencyNanos) {
+                // Contribute the request latency
+                mainActivity.onCronetImageLoadSuccessful(latencyNanos);
+
+                // Send image to layout
+                final Bitmap bimage = BitmapFactory.decodeByteArray(bodyBytes, 0, bodyBytes.length);
+                mainActivity.runOnUiThread(() -> {
+                    holder.getmImageViewCronet().setImageBitmap(bimage);
+                    holder.getmImageViewCronet().getLayoutParams().height = bimage.getHeight();
+                    holder.getmImageViewCronet().getLayoutParams().width = bimage.getWidth();
+                });
+            }
+        };
+
+        // The URL request builder allows you to customize the request.
+        UrlRequest.Builder builder = cronetApplication.getCronetEngine()
+                .newUrlRequestBuilder(
+                        ImageRepository.getImage(position),
+                        callback,
+                        cronetApplication.getCronetCallbackExecutorService())
+                // You can set arbitrary headers as needed
+                .addHeader("x-my-custom-header", "Hello-from-Cronet")
+                // Cronet supports QoS if you specify request priorities
+                .setPriority(UrlRequest.Builder.REQUEST_PRIORITY_IDLE);
+        // ... and more! Check the UrlRequest.Builder docs.
+
         // Start the request
         builder.build().start();
-
-    }
-
-    /**
-     * Use this class for create a request and receive a callback once the request is finished.
-     */
-    class SimpleUrlRequestCallback extends UrlRequest.Callback {
-
-        private final ByteArrayOutputStream bytesReceived = new ByteArrayOutputStream();
-        private final WritableByteChannel receiveChannel = Channels.newChannel(bytesReceived);
-        private final ImageView imageView;
-        private final MainActivity mainActivity;
-        public long start;
-
-        SimpleUrlRequestCallback(ImageView imageView, MainActivity mainActivity) {
-            this.imageView = imageView;
-            this.mainActivity = mainActivity;
-        }
-
-        @Override
-        public void onRedirectReceived(
-                UrlRequest request, UrlResponseInfo info, String newLocationUrl) {
-            android.util.Log.i(TAG, "****** onRedirectReceived ******");
-            request.followRedirect();
-        }
-
-        @Override
-        public void onResponseStarted(UrlRequest request, UrlResponseInfo info) {
-            android.util.Log.i(TAG, "****** Response Started ******");
-            android.util.Log.i(TAG, "*** Headers Are *** " + info.getAllHeaders());
-
-            request.read(ByteBuffer.allocateDirect(32 * 1024));
-        }
-
-        @Override
-        public void onReadCompleted(
-                UrlRequest request, UrlResponseInfo info, ByteBuffer byteBuffer) {
-            android.util.Log.i(TAG, "****** onReadCompleted ******" + byteBuffer);
-            byteBuffer.flip();
-            try {
-                receiveChannel.write(byteBuffer);
-            } catch (IOException e) {
-                android.util.Log.i(TAG, "IOException during ByteBuffer read. Details: ", e);
-            }
-            byteBuffer.clear();
-            request.read(byteBuffer);
-        }
-
-        @Override
-        public void onSucceeded(UrlRequest request, UrlResponseInfo info) {
-
-            long stop = System.nanoTime();
-
-            android.util.Log.i(TAG,
-                    "****** Cronet Request Completed, the latency is " + (stop - start));
-
-            android.util.Log.i(TAG,
-                    "****** Cronet Request Completed, status code is " + info.getHttpStatusCode()
-                            + ", total received bytes is " + info.getReceivedByteCount());
-            // Set the latency
-            mainActivity.addCronetLatency(stop - start);
-
-            // Send image to layout
-            byte[] byteArray = bytesReceived.toByteArray();
-            final Bitmap bimage = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length);
-            mainActivity.runOnUiThread(() -> {
-                imageView.setImageBitmap(bimage);
-                imageView.getLayoutParams().height = bimage.getHeight();
-                imageView.getLayoutParams().width = bimage.getWidth();
-            });
-        }
-
-        @Override
-        public void onFailed(UrlRequest var1, UrlResponseInfo var2, CronetException var3) {
-            android.util.Log.i(TAG, "****** onFailed, error is: " + var3.getMessage());
-        }
     }
 
     @Override
     public int getItemCount() {
-        return ImageRepository.numberOfImages();
+        return Math.min(
+                mainActivity.getCronetApplication().imagesToLoadCeiling.get(),
+                ImageRepository.numberOfImages());
     }
 }

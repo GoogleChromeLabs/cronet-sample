@@ -17,54 +17,58 @@ package com.google.samples.cronet_sample;
 
 import android.os.Bundle;
 import android.widget.TextView;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+
 import com.google.samples.cronet_sample.data.ImageRepository;
+
 import java.io.File;
 import java.io.IOException;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.chromium.net.CronetEngine;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
     private SwipeRefreshLayout swipeRefreshLayout;
-    private final AtomicLong cronetLatency = new AtomicLong();
-    private long totalLatency;
-    private long numberOfImages;
-    private CronetEngine cronetEngine;
+    private final AtomicReference<CronetMetrics> metrics = new AtomicReference<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // set up cronet engine and it's logging mechanism
-        Thread.setDefaultUncaughtExceptionHandler(new ExceptionHandler());
-        setCronetEngine();
+        // When debugging, the net log (https://www.chromium
+        // .org/developers/design-documents/network-stack/netlog)
+        // is an extremely useful tool to figure out what's going on in the network stack. However,
+        // because it's a JSON file, it's quite sensitive to correct formatting,so we must ensure
+        // that it's always closed properly.
         startNetLog();
+        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+            stopNetLog();
+        });
 
         setContentView(R.layout.images_activity);
         setUpToolbar();
         swipeRefreshLayout = findViewById(R.id.images_activity_layout);
-        swipeRefreshLayout.setOnRefreshListener(() -> loadItems());
+        swipeRefreshLayout.setOnRefreshListener(this::loadItems);
         loadItems();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-
-        // ensure logging is stopped properly when activity is ended, either by system or
-        // by clicking the back button
         stopNetLog();
     }
 
     private void loadItems() {
-        numberOfImages = 0;
+        metrics.set(new CronetMetrics(0, 0));
+        getCronetApplication().imagesToLoadCeiling.incrementAndGet();
 
         RecyclerView cronetView = findViewById(R.id.images_view);
 
@@ -83,7 +87,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setUpToolbar() {
-        Toolbar toolbar =  findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayShowTitleEnabled(false);
         ((TextView) toolbar.findViewById(R.id.title)).setText(R.string.toolbar_title);
@@ -91,41 +95,40 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * This calculates and sets on the UI the latency of loading images with Cronet.
-     * @param cronetLatency
+     *
+     * <p>This method must be thread safe as it can be called from multiple Cronet callbacks
+     * in parallel.
      */
-    public void addCronetLatency(final long cronetLatency) {
+    public void onCronetImageLoadSuccessful(long requestLatencyNanos) {
+        CronetMetrics delta = new CronetMetrics(requestLatencyNanos, 1);
+        CronetMetrics newMetrics = metrics.accumulateAndGet(
+                delta,
+                (left, right) -> new CronetMetrics(
+                        left.totalLatencyNanos + right.totalLatencyNanos,
+                        left.numberOfLoadedImages + right.numberOfLoadedImages));
 
-        totalLatency += cronetLatency;
-        numberOfImages++;
 
-        if (numberOfImages == ImageRepository.numberOfImages()) {
-            final long averageLatency = totalLatency / numberOfImages;
+        if (newMetrics.numberOfLoadedImages == Math.min(
+                getCronetApplication().imagesToLoadCeiling.get(),
+                ImageRepository.numberOfImages())) {
+            long averageLatencyNanos =
+                    newMetrics.totalLatencyNanos / newMetrics.numberOfLoadedImages;
             android.util.Log.i(TAG,
-                    "All Cronet Requests Complete, the average latency is " + averageLatency);
+                    "All Cronet Requests Complete, the average latency is " + averageLatencyNanos
+                            + " nanos.");
             final TextView cronetTime = findViewById(R.id.cronet_time_label);
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    cronetTime.setText(String.format(getResources()
-                            .getString(R.string.images_loaded), averageLatency));
-                }
-            });
-            this.cronetLatency.set(averageLatency);
+            runOnUiThread(() -> cronetTime.setText(String.format(getResources()
+                    .getString(R.string.images_loaded), averageLatencyNanos)));
         }
     }
 
-    private void setCronetEngine() {
-        // create the Cronet engine, enable caching of HTTP data and
-        // other information like QUIC server information, HTTP/2 protocol and QUIC protocol.
-        cronetEngine = new CronetEngine.Builder(this)
-            .enableHttpCache(CronetEngine.Builder.HTTP_CACHE_IN_MEMORY, 100 * 1024)
-            .enableHttp2(true)
-            .enableQuic(true)
-            .build();
-
+    CronetApplication getCronetApplication() {
+        return ((CronetApplication) getApplication());
     }
 
-    public CronetEngine getCronetEngine() { return cronetEngine; }
+    private CronetEngine getCronetEngine() {
+        return getCronetApplication().getCronetEngine();
+    }
 
     /**
      * Method to start NetLog to log Cronet events.
@@ -136,8 +139,8 @@ public class MainActivity extends AppCompatActivity {
         File outputFile;
         try {
             outputFile = File.createTempFile("cronet", "log",
-                this.getExternalFilesDir(null));
-            cronetEngine.startNetLogToFile(outputFile.toString(), false);
+                    this.getExternalFilesDir(null));
+            getCronetEngine().startNetLogToFile(outputFile.toString(), false);
         } catch (IOException e) {
             android.util.Log.e(TAG, e.toString());
         }
@@ -147,14 +150,19 @@ public class MainActivity extends AppCompatActivity {
      * Method to properly stop NetLog
      */
     private void stopNetLog() {
-        cronetEngine.stopNetLog();
+        getCronetEngine().stopNetLog();
     }
 
-    // properly end network logging when app crashes
-    private class ExceptionHandler implements Thread.UncaughtExceptionHandler {
-        public void uncaughtException(Thread thread, Throwable exception) {
-            android.util.Log.e(TAG, exception.toString());
-            stopNetLog();
+    /**
+     * Holder of multiple metrics that can be atomically updated.
+     */
+    private static class CronetMetrics {
+        final long totalLatencyNanos;
+        final int numberOfLoadedImages;
+
+        CronetMetrics(long totalLatencyNanos, int numberOfLoadedImages) {
+            this.totalLatencyNanos = totalLatencyNanos;
+            this.numberOfLoadedImages = numberOfLoadedImages;
         }
     }
 }
