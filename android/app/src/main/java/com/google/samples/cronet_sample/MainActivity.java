@@ -122,7 +122,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public CronetApplication getCronetApplication() {
+    CronetApplication getCronetApplication() {
         return ((CronetApplication) getApplication());
     }
 

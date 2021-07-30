@@ -27,7 +27,7 @@ public class CronetApplication extends Application {
     private CronetEngine cronetEngine;
 
     // Executor that will invoke asynchronous Cronet callbacks. Like with the Cronet engine, we
-    // recomment that it's managed centrally.
+    // recommend that it's managed centrally.
     private ExecutorService cronetCallbackExecutorService;
 
     // We use this variable to demonstrate how Cronet's caching behaves. Each subsequent attempt to
@@ -137,7 +137,7 @@ public class CronetApplication extends Application {
         // If the user wants to pick a Cronet implementation (from those available on the device)
         // manually, they can retrieve the list of all providers on the device and use them to
         // create a CronetEngine directly. Make sure to check if the providers are enabled,
-        // otherwise
+        // otherwise you might run into compatibility issues further down.
         List<CronetProvider> enabledProviders =
                 CronetProvider.getAllProviders(context)
                         .stream()
@@ -146,6 +146,7 @@ public class CronetApplication extends Application {
 
         if (enabledProviders.isEmpty()) {
             Toast.makeText(context, "No enabled Cronet providers!", Toast.LENGTH_SHORT).show();
+            return;
         }
 
         // Typically, the application would decide based on the name and version. We just pick
