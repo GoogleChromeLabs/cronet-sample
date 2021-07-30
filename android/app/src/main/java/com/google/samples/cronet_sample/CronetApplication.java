@@ -68,16 +68,19 @@ public class CronetApplication extends Application {
                 .setStoragePath(context.getFilesDir().getAbsolutePath())
 
                 // Enable on-disk cache, this enables automatic QUIC usage for subsequent requests
-                // to the same domain. If you also want to cache HTTP responses, use HTTP_CACHE_DISK
-                // instead. Typically you will want to enable caching in full, we turn it off
-                // for this demo to better demonstrate Cronet's behavior using net protocols.
+                // to the same domain across application restarts. If you also want to cache HTTP
+                // responses, use HTTP_CACHE_DISK instead. Typically you will want to enable caching
+                // in full, we turn it off for this demo to better demonstrate Cronet's behavior
+                // using net protocols.
                 .enableHttpCache(CronetEngine.Builder.HTTP_CACHE_DISK_NO_HTTP, 100 * 1024)
 
                 // HTTP2 and QUIC support is enabled by default. When both are enabled (and no hints
                 // are provided), Cronet tries to use both protocols and it's nondeterministic which
                 // one will be used for the first few requests. As soon as Cronet is aware that
                 // a server supports QUIC, it will always attempt to use it first. Try disabling
-                // and enabling HTTP2 support and see how the negotiated protocol changes!
+                // and enabling HTTP2 support and see how the negotiated protocol changes! Also try
+                // forcing a new connection by enabling and disabling flight mode after the first
+                // request to ensure QUIC usage.
                 .enableHttp2(true)
                 .enableQuic(true)
 
