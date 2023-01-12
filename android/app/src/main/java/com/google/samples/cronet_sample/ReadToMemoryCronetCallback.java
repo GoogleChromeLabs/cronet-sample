@@ -1,15 +1,17 @@
 package com.google.samples.cronet_sample;
 
-import org.chromium.net.CronetException;
-import org.chromium.net.UrlRequest;
-import org.chromium.net.UrlResponseInfo;
-
+import android.net.http.HttpEngine;
+import android.net.http.HttpException;
+import android.net.http.UrlRequest;
+import android.net.http.UrlResponseInfo;
+import androidx.annotation.RequiresApi;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
 
+@RequiresApi(api = 34)
 abstract class ReadToMemoryCronetCallback extends UrlRequest.Callback {
 
     private static final String TAG = "ReadToMemoryCronetCallback";
@@ -121,7 +123,7 @@ abstract class ReadToMemoryCronetCallback extends UrlRequest.Callback {
             UrlRequest request, UrlResponseInfo info, byte[] bodyBytes, long latencyNanos);
 
     @Override
-    public void onFailed(UrlRequest var1, UrlResponseInfo var2, CronetException var3) {
+    public void onFailed(UrlRequest var1, UrlResponseInfo var2, HttpException var3) {
         android.util.Log.i(TAG, "****** onFailed, error is: " + var3.getMessage());
     }
 }

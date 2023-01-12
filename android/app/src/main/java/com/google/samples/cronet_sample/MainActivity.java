@@ -27,11 +27,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.samples.cronet_sample.data.ImageRepository;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
-
-import org.chromium.net.CronetEngine;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -43,16 +39,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // When debugging, the net log (https://www.chromium
-        // .org/developers/design-documents/network-stack/netlog)
-        // is an extremely useful tool to figure out what's going on in the network stack. However,
-        // because it's a JSON file, it's quite sensitive to correct formatting,so we must ensure
-        // that it's always closed properly.
-        startNetLog();
-        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
-            stopNetLog();
-        });
-
         setContentView(R.layout.images_activity);
         setUpToolbar();
         swipeRefreshLayout = findViewById(R.id.images_activity_layout);
@@ -63,7 +49,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        stopNetLog();
     }
 
     private void loadItems() {
@@ -124,33 +109,6 @@ public class MainActivity extends AppCompatActivity {
 
     CronetApplication getCronetApplication() {
         return ((CronetApplication) getApplication());
-    }
-
-    private CronetEngine getCronetEngine() {
-        return getCronetApplication().getCronetEngine();
-    }
-
-    /**
-     * Method to start NetLog to log Cronet events.
-     * Find more info about Netlog here:
-     * https://www.chromium.org/developers/design-documents/network-stack/netlog
-     */
-    private void startNetLog() {
-        File outputFile;
-        try {
-            outputFile = File.createTempFile("cronet", "log",
-                    this.getExternalFilesDir(null));
-            getCronetEngine().startNetLogToFile(outputFile.toString(), false);
-        } catch (IOException e) {
-            android.util.Log.e(TAG, e.toString());
-        }
-    }
-
-    /**
-     * Method to properly stop NetLog
-     */
-    private void stopNetLog() {
-        getCronetEngine().stopNetLog();
     }
 
     /**

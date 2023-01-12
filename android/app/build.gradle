@@ -1,8 +1,7 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 30
-    buildToolsVersion "30.0.2"
+    compileSdkVersion "android-UpsideDownCake"
 
     // Cronet jars contain Java 8 bytecode.
     compileOptions {
@@ -14,11 +13,12 @@ android {
         applicationId "com.google.samples.cronet_sample"
         // Cronet itself supports devices down to JellyBean, but the test app makes use of
         // language constructs such as streams that aren't supported in lower versions.
-        minSdkVersion 24
-        targetSdkVersion 30
+        targetSdkVersion 33
+        minSdkVersion 33
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+        // compileSdkPreview = "UpsideDownCake"
     }
     buildTypes {
         release {
@@ -34,7 +34,6 @@ ext {
 }
 
 dependencies {
-    implementation "com.google.android.gms:play-services-cronet:17.0.1"
     implementation 'androidx.appcompat:appcompat:1.3.0'
     implementation 'androidx.recyclerview:recyclerview:1.2.1'
     implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'

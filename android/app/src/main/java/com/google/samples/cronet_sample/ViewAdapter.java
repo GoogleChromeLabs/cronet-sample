@@ -17,17 +17,17 @@ package com.google.samples.cronet_sample;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.http.UrlRequest;
+import android.net.http.UrlResponseInfo;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
+import androidx.annotation.RequiresApi;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.samples.cronet_sample.data.ImageRepository;
-
-import org.chromium.net.UrlRequest;
-import org.chromium.net.UrlResponseInfo;
 
 public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
 
@@ -57,6 +57,7 @@ public class ViewAdapter extends RecyclerView.Adapter<ViewAdapter.ViewHolder> {
         }
     }
 
+    @RequiresApi(api = 34)
     @Override
     public void onBindViewHolder(final ViewHolder holder, int position) {
         CronetApplication cronetApplication = mainActivity.getCronetApplication();
