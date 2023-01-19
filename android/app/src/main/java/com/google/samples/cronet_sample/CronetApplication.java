@@ -3,6 +3,9 @@ package com.google.samples.cronet_sample;
 import android.app.Application;
 import android.content.Context;
 import android.net.http.HttpEngine;
+
+import androidx.annotation.RequiresApi;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -38,6 +41,7 @@ public class CronetApplication extends Application {
         return cronetCallbackExecutorService;
     }
 
+    @RequiresApi(api = 34)
     private static HttpEngine createDefaultCronetEngine(Context context) {
         // Cronet makes use of modern protocols like HTTP/2 and QUIC by default. However, to make
         // the most of servers that support QUIC, one must either specify that a particular domain
@@ -51,7 +55,7 @@ public class CronetApplication extends Application {
         //
         // We recommend that QUIC hints are provided explicitly when working with servers known
         // to support QUIC.
-        return HttpEngine.builder(context)
+        return new HttpEngine.Builder(context)
                 // The storage path must be set first when using a disk cache.
                 .setStoragePath(context.getFilesDir().getAbsolutePath())
 
@@ -60,7 +64,7 @@ public class CronetApplication extends Application {
                 // responses, use HTTP_CACHE_DISK instead. Typically you will want to enable caching
                 // in full, we turn it off for this demo to better demonstrate Cronet's behavior
                 // using net protocols.
-                .enableHttpCache(HttpEngine.Builder.HTTP_CACHE_DISK_NO_HTTP, 100 * 1024)
+                .setEnableHttpCache(HttpEngine.Builder.HTTP_CACHE_DISK_NO_HTTP, 100 * 1024)
 
                 // HTTP2 and QUIC support is enabled by default. When both are enabled (and no hints
                 // are provided), Cronet tries to use both protocols and it's nondeterministic which
@@ -69,11 +73,11 @@ public class CronetApplication extends Application {
                 // and enabling HTTP2 support and see how the negotiated protocol changes! Also try
                 // forcing a new connection by enabling and disabling flight mode after the first
                 // request to ensure QUIC usage.
-                .enableHttp2(true)
-                .enableQuic(true)
+                .setEnableHttp2(true)
+                .setEnableQuic(true)
 
                 // Brotli support is NOT enabled by default.
-                .enableBrotli(true)
+                .setEnableBrotli(true)
 
                 // One can provide a custom user agent if desired.
                 .setUserAgent("CronetSampleApp")
