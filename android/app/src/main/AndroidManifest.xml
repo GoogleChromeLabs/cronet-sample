@@ -12,7 +12,8 @@
         android:largeHeap="true"
         android:allowBackup="false"
         android:theme="@style/CronetSample">
-        <activity android:name=".WelcomeActivity">
+        <activity android:name=".WelcomeActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
